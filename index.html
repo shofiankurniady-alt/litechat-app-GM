@@ -3,82 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LiteChat Pro</title>
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <title>LiteChat Pro - Cloud Edition</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --dark: #111b21; --side: #111b21; --head: #202c33; --green: #00a884; --msg-me: #005c4b; --msg-them: #202c33; --text: #e9edef; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         body { margin: 0; background: #0c1317; color: var(--text); height: 100dvh; display: flex; overflow: hidden; }
 
-        /* MODAL SETUP */
+        /* Setup Modal */
         .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-        .box { background: var(--head); padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
-        .box img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); cursor: pointer; margin-bottom: 15px; }
+        .box { background: var(--head); padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .box img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); cursor: pointer; margin-bottom: 15px; background: #2a3942; }
 
-        /* LAYOUT */
-        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; }
-        .main { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
+        /* Sidebar & Main Layout */
+        .sidebar { width: 350px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; }
+        .main { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; position: relative; }
 
-        /* CHAT LIST */
         .chat-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; }
-        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 11px; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: auto; }
-        .pfp-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .chat-item:hover { background: #202c33; }
+        .pfp-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #2a3942; }
 
-        /* MESSAGES */
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 15px; position: relative; }
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-blend-mode: overlay; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 15px; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.2); }
         .msg.me { align-self: flex-end; background: var(--msg-me); border-top-right-radius: 0; }
         .msg.them { align-self: flex-start; background: var(--msg-them); border-top-left-radius: 0; }
-        .ticks { font-size: 14px; margin-left: 5px; color: #8696a0; }
-        .ticks.read { color: #53bdeb; }
 
-        /* INPUT AREA */
-        .input-bar { background: var(--head); padding: 10px; display: flex; gap: 10px; align-items: center; }
-        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px; border-radius: 20px; color: white; outline: none; }
-        button#send-btn { background: var(--green); border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
-
-        @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; height: 100%; z-index: 10; }
-            .sidebar.hide { transform: translateX(-100%); }
-        }
+        .input-bar { background: var(--head); padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px 15px; border-radius: 25px; color: white; outline: none; }
+        button { background: var(--green); border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; color: #111; }
+        
         .hidden { display: none !important; }
+        @media (max-width: 768px) { 
+            .sidebar { position: absolute; width: 100%; height: 100%; z-index: 5; }
+            .sidebar.mobile-hide { transform: translateX(-100%); }
+        }
     </style>
 </head>
 <body>
 
     <div id="setup-modal" class="modal">
         <div class="box">
-            <h2>Profil Kamu</h2>
+            <h2 style="margin-top:0">LiteChat Cloud</h2>
             <img id="preview-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" onclick="document.getElementById('file-pfp').click()">
             <input type="file" id="file-pfp" class="hidden" accept="image/*" onchange="loadPhoto(this)">
-            <input type="text" id="reg-id" placeholder="ID Unik (misal: budi77)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
-            <button onclick="saveProfile()" style="width:100%; background: var(--green); padding:10px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK</button>
+            <input type="text" id="reg-id" placeholder="Username (contoh: ryan_99)" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:none; background:#2a3942; color:white;">
+            <button onclick="saveProfile()" style="width:100%;">MASUK KE CHAT</button>
         </div>
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="input-bar" style="height:70px">
-            <img id="my-pfp-show" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+        <div class="input-bar" style="height:70px; border-bottom: 1px solid #222d34;">
+            <img id="my-pfp-show" src="" class="pfp-small">
             <b id="my-id-show"></b>
-            <button onclick="addFriend()" style="margin-left:auto">+</button>
+            <button onclick="addFriend()" style="margin-left:auto; padding: 5px 12px;">+</button>
         </div>
         <div id="friend-list"></div>
     </div>
 
     <div class="main">
         <div class="input-bar">
-            <button onclick="closeChat()" id="back-btn" class="hidden">←</button>
-            <b id="chat-title">Pilih Teman</b>
+            <button onclick="closeChat()" id="back-btn" class="hidden" style="background:transparent; color:white; font-size:20px;">←</button>
+            <div style="display:flex; flex-direction:column;">
+                <b id="chat-title">Pilih Obrolan</b>
+                <span id="chat-status" style="font-size:11px; color:var(--green)"></span>
+            </div>
         </div>
         <div id="messages"></div>
         <form class="input-bar hidden" id="chat-form">
             <input type="text" id="msg-input" placeholder="Ketik pesan..." autocomplete="off">
-            <button type="submit" id="send-btn">KIRIM</button>
+            <button type="submit">KIRIM</button>
         </form>
     </div>
 
 <script>
-    let peer, conn, myID = localStorage.getItem('wid'), myPfp = localStorage.getItem('wpfp') || '';
+    // 1. Inisialisasi Supabase
+    const SB_URL = "https://yphhjokdqfkxzrsrbdsg.supabase.co";
+    const SB_KEY = "sb_publishable_8OemYviaOAEkkBtiDrLQkA_YJf9qtpo";
+    const _supabase = supabase.createClient(SB_URL, SB_KEY);
+
+    let myID = localStorage.getItem('wid');
+    let myPfp = localStorage.getItem('wpfp') || '';
     let friends = JSON.parse(localStorage.getItem('wfriends') || '{}');
     let activeChat = null;
 
@@ -91,14 +95,18 @@
         const reader = new FileReader();
         reader.onload = e => {
             document.getElementById('preview-img').src = e.target.result;
-            myPfp = e.target.result;
+            myPfp = e.target.result; // Base64 string
         }
         reader.readAsDataURL(input.files[0]);
     }
 
-    function saveProfile() {
+    async function saveProfile() {
         const id = document.getElementById('reg-id').value.trim().toLowerCase();
-        if(!id) return alert("ID wajib diisi!");
+        if(!id) return alert("Username wajib diisi!");
+        
+        const { error } = await _supabase.from('profiles').upsert({ id: id, pfp: myPfp });
+        if(error) return alert("Gagal menyimpan profil. Coba ID lain.");
+
         localStorage.setItem('wid', id);
         localStorage.setItem('wpfp', myPfp);
         location.reload();
@@ -107,100 +115,77 @@
     function startApp() {
         document.getElementById('my-id-show').innerText = "@" + myID;
         document.getElementById('my-pfp-show').src = myPfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        renderFriends();
         
-        peer = new Peer(myID);
-        peer.on('open', () => renderFriends());
-        
-        peer.on('connection', c => {
-            c.on('data', data => handleIncoming(c.peer, data));
-            if(activeChat === c.peer) conn = c;
-        });
+        // Listen Realtime Messages
+        _supabase
+            .channel('any')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${myID}` }, 
+            payload => {
+                receiveMessage(payload.new);
+            })
+            .subscribe();
     }
 
-    function addFriend() {
-        const id = prompt("Masukkan ID teman:").toLowerCase().trim();
-        if(id && id !== myID) {
-            if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
-            saveFriends();
-            renderFriends();
-            openChat(id);
-        }
-    }
+    async function addFriend() {
+        const id = prompt("Masukkan Username teman:").toLowerCase().trim();
+        if(!id || id === myID) return;
 
-    function openChat(id) {
-        activeChat = id;
-        friends[id].unread = 0;
+        const { data, error } = await _supabase.from('profiles').select('id, pfp').eq('id', id).single();
+        if(!data) return alert("User tidak ditemukan di database!");
+
+        friends[id] = { pfp: data.pfp, unread: 0 };
         saveFriends();
+        renderFriends();
+    }
+
+    async function openChat(id) {
+        activeChat = id;
+        if(window.innerWidth <= 768) document.getElementById('sidebar').classList.add('mobile-hide');
         
-        document.getElementById('sidebar').classList.add('mobile-hide');
-        document.getElementById('chat-title').innerText = id;
+        document.getElementById('chat-title').innerText = "@" + id;
         document.getElementById('chat-form').classList.remove('hidden');
         document.getElementById('back-btn').classList.remove('hidden');
         
-        renderMessages(id);
+        // Reset Unread
+        if(friends[id]) friends[id].unread = 0;
+        saveFriends();
         renderFriends();
 
-        // Pastikan koneksi segar
-        conn = peer.connect(id);
-        conn.on('open', () => {
-            conn.send({ type: 'profile', pfp: myPfp });
-            conn.send({ type: 'read' });
-        });
-        conn.on('data', data => handleIncoming(id, data));
+        // Load History
+        const { data } = await _supabase
+            .from('messages')
+            .select('*')
+            .or(`and(sender_id.eq.${myID},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${myID})`)
+            .order('created_at', { ascending: true });
+
+        renderMessages(data || []);
     }
 
-    function handleIncoming(id, data) {
-        if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
-
-        if(data.type === 'chat') {
-            friends[id].logs.push({ side: 'them', text: data.text, time: data.time, read: (activeChat === id) });
-            if(activeChat !== id) {
-                friends[id].unread++;
-            } else {
-                if(conn && conn.open) conn.send({ type: 'read' });
+    function receiveMessage(msg) {
+        if(activeChat === msg.sender_id) {
+            openChat(activeChat); 
+        } else {
+            if(friends[msg.sender_id]) {
+                friends[msg.sender_id].unread++;
+                saveFriends();
+                renderFriends();
             }
         }
-        if(data.type === 'read') {
-            friends[id].logs.forEach(m => { if(m.side === 'me') m.read = true; });
-        }
-        if(data.type === 'profile') {
-            friends[id].pfp = data.pfp;
-        }
-
-        saveFriends();
-        if(activeChat === id) renderMessages(id);
-        renderFriends();
     }
 
-    // PERBAIKAN TOMBOL KIRIM & ENTER
-    document.getElementById('chat-form').onsubmit = (e) => {
+    document.getElementById('chat-form').onsubmit = async (e) => {
         e.preventDefault();
         const inp = document.getElementById('msg-input');
         const val = inp.value.trim();
         if(!val || !activeChat) return;
 
-        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const msgObj = { side: 'me', text: val, time: time, read: false };
-
-        friends[activeChat].logs.push(msgObj);
-        saveFriends();
-        renderMessages(activeChat);
         inp.value = "";
+        const { error } = await _supabase
+            .from('messages')
+            .insert({ sender_id: myID, receiver_id: activeChat, content: val });
 
-        // Fungsi kirim internal
-        const sendMsg = (c) => {
-            c.send({ type: 'chat', text: val, time: time });
-        };
-
-        if(conn && conn.open && conn.peer === activeChat) {
-            sendMsg(conn);
-        } else {
-            const newConn = peer.connect(activeChat);
-            newConn.on('open', () => {
-                conn = newConn;
-                sendMsg(newConn);
-            });
-        }
+        if(!error) openChat(activeChat);
     };
 
     function renderFriends() {
@@ -208,30 +193,36 @@
         container.innerHTML = "";
         for(let id in friends) {
             const f = friends[id];
-            const badge = f.unread > 0 ? `<div class="badge">${f.unread}</div>` : "";
             container.innerHTML += `
                 <div class="chat-item" onclick="openChat('${id}')">
                     <img src="${f.pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="pfp-small">
-                    <b>@${id}</b> ${badge}
+                    <div style="flex:1"><b>@${id}</b></div>
+                    ${f.unread > 0 ? `<span style="background:var(--green); color:#000; padding:2px 8px; border-radius:10px; font-size:12px; font-weight:bold">${f.unread}</span>` : ''}
                 </div>`;
         }
     }
 
-    function renderMessages(id) {
+    function renderMessages(logs) {
         const container = document.getElementById('messages');
         container.innerHTML = "";
-        friends[id].logs.forEach(m => {
-            const tickStatus = m.side === 'me' ? `<span class="ticks ${m.read ? 'read' : ''}">✔✔</span>` : '';
+        logs.forEach(m => {
+            const side = m.sender_id === myID ? 'me' : 'them';
             container.innerHTML += `
-                <div class="msg ${m.side}">
-                    ${m.text}
-                    <div style="font-size:10px; opacity:0.6; text-align:right">${m.time} ${tickStatus}</div>
+                <div class="msg ${side}">
+                    ${m.content}
+                    <div style="font-size:9px; opacity:0.5; text-align:right; margin-top:4px;">
+                        ${new Date(m.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                    </div>
                 </div>`;
         });
         container.scrollTop = container.scrollHeight;
     }
 
-    function closeChat() { document.getElementById('sidebar').classList.remove('mobile-hide'); activeChat = null; }
+    function closeChat() { 
+        document.getElementById('sidebar').classList.remove('mobile-hide'); 
+        activeChat = null; 
+    }
+
     function saveFriends() { localStorage.setItem('wfriends', JSON.stringify(friends)); }
 </script>
 </body>
