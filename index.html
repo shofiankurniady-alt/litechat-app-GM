@@ -2,115 +2,251 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>LiteChat Pro - Stable</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LiteChat Pro - Delete Feature</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
-        :root { --dark: #111b21; --head: #202c33; --green: #00a884; --msg-me: #005c4b; --msg-them: #202c33; --text: #e9edef; }
-        body { margin: 0; background: #0b141a; color: var(--text); font-family: sans-serif; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 300px; border-right: 1px solid #333; display: flex; flex-direction: column; background: var(--dark); }
-        .main { flex: 1; display: flex; flex-direction: column; position: relative; }
-        .header { background: var(--head); padding: 15px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #333; }
-        .chat-item { padding: 15px; border-bottom: 1px solid #222; cursor: pointer; }
-        .chat-item:hover { background: #2a3942; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); }
-        .msg { padding: 10px; border-radius: 8px; max-width: 70%; font-size: 14px; word-wrap: break-word; }
-        .msg.me { align-self: flex-end; background: var(--msg-me); }
-        .msg.them { align-self: flex-start; background: var(--msg-them); }
-        .input-area { background: var(--head); padding: 15px; display: flex; gap: 10px; }
-        input { flex: 1; padding: 10px; border-radius: 20px; border: none; background: #2a3942; color: white; outline: none; }
-        button { background: var(--green); border: none; padding: 5px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+        :root { --dark: #111b21; --side: #111b21; --head: #202c33; --green: #00a884; --msg-me: #005c4b; --msg-them: #202c33; --text: #e9edef; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { margin: 0; background: #0c1317; color: var(--text); height: 100dvh; display: flex; overflow: hidden; }
+
+        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
+
+        /* Chat List */
+        .chat-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; position: relative; }
+        .chat-item:hover { background: #202c33; }
+        .pfp { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #6a7175; }
+        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 11px; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; position: absolute; right: 15px; top: 35%; }
+
+        /* Context Menu */
+        #context-menu { position: fixed; background: #233138; border-radius: 3px; padding: 8px 0; min-width: 170px; display: none; z-index: 3000; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .menu-item { padding: 10px 20px; cursor: pointer; font-size: 14px; color: #d1d7db; }
+        .menu-item:hover { background: #182229; }
+
+        /* Messages */
+        #messages { flex: 1; overflow-y: auto; padding: 20px 5%; display: flex; flex-direction: column; gap: 4px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 14.5px; }
+        .msg.me { align-self: flex-end; background: var(--msg-me); border-top-right-radius: 0; }
+        .msg.them { align-self: flex-start; background: var(--msg-them); border-top-left-radius: 0; }
+
+        .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .box { background: var(--head); padding: 25px; border-radius: 15px; width: 100%; max-width: 350px; text-align: center; }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 100%; position: absolute; z-index: 5; height: 100%; }
+            .sidebar.hide { transform: translateX(-100%); }
+        }
+
+        .hidden { display: none !important; }
+        .input-bar { background: var(--head); padding: 10px; display: flex; gap: 10px; align-items: center; }
+        input { background: #2a3942; border: none; padding: 12px; border-radius: 20px; color: white; outline: none; flex: 1; }
+        button { background: var(--green); border: none; padding: 10px 20px; border-radius: 20px; color: #000; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
-<div class="sidebar">
-    <div class="header">
-        <div><b id="my-name"></b><br><small id="my-id" style="color:var(--green)"></small></div>
-        <button onclick="addFriend()">+</button>
+
+    <div id="setup-modal" class="modal">
+        <div class="box">
+            <h2>Profil Baru</h2>
+            <img id="preview-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid var(--green); margin-bottom:15px; cursor:pointer" onclick="document.getElementById('file-pfp').click()">
+            <input type="file" id="file-pfp" class="hidden" accept="image/*" onchange="previewPfp(this)">
+            <input type="text" id="reg-id" placeholder="ID (misal: geita)" style="width:100%; margin-bottom:10px;">
+            <input type="text" id="reg-name" placeholder="Nama Kamu" style="width:100%; margin-bottom:15px;">
+            <button onclick="register()" style="width:100%">Mulai</button>
+        </div>
     </div>
-    <div id="friend-list"></div>
-</div>
-<div class="main">
-    <div class="header"><b id="chat-title">Pilih Teman</b></div>
-    <div id="messages"></div>
-    <form id="chat-form" class="input-area" style="display:none">
-        <input type="text" id="msg-input" placeholder="Ketik pesan..." autocomplete="off">
-        <button type="submit">Kirim</button>
-    </form>
-</div>
+
+    <div id="context-menu">
+        <div class="menu-item" onclick="deleteChatAction()" style="color:#ef5350">Hapus Obrolan</div>
+        <div class="menu-item" onclick="alert('Fitur segera hadir!')">Arsip Chat</div>
+    </div>
+
+    <div class="sidebar" id="sidebar">
+        <div class="input-bar" style="height: 65px; border-bottom:1px solid #222d34">
+            <img id="my-pfp-show" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer" onclick="changePfpManual()">
+            <div style="flex:1"><b id="my-name-show"></b><br><small id="my-id-show" style="color:var(--green)"></small></div>
+            <button onclick="addFriend()">+</button>
+        </div>
+        <div id="friend-list" style="flex:1; overflow-y:auto;"></div>
+    </div>
+
+    <div class="main">
+        <div class="input-bar">
+            <button onclick="backToList()" id="btn-back" class="hidden">←</button>
+            <img id="target-pfp" src="" class="hidden" style="width:35px;height:35px;border-radius:50%;object-fit:cover;margin:0 10px">
+            <b id="chat-title">Pilih Teman</b>
+        </div>
+        <div id="messages"></div>
+        <form class="input-bar hidden" id="chat-form">
+            <input type="text" id="msg-input" placeholder="Ketik pesan..." autocomplete="off">
+            <button type="submit">Kirim</button>
+        </form>
+    </div>
+
 <script>
-    // System Anti-Hilang saat Refresh
-    let myID = localStorage.getItem('wid_final') || prompt("Masukkan ID Anda:").toLowerCase();
-    let myName = localStorage.getItem('wname_final') || prompt("Masukkan Nama Anda:");
-    localStorage.setItem('wid_final', myID);
-    localStorage.setItem('wname_final', myName);
-
-    let chats = JSON.parse(localStorage.getItem('saved_chats_final') || '{}');
+    let peer, conn, 
+        myID = localStorage.getItem('wid'), 
+        myName = localStorage.getItem('wname'), 
+        myPfp = localStorage.getItem('wpfp') || '';
+    
+    let friends = JSON.parse(localStorage.getItem('wfriends') || '{}');
     let activeChat = null;
+    let selectedFriendForMenu = null;
 
-    document.getElementById('my-name').innerText = myName;
-    document.getElementById('my-id').innerText = "@" + myID;
+    if(myID) { document.getElementById('setup-modal').classList.add('hidden'); initPeer(); }
 
-    const peer = new Peer(myID);
-    peer.on('open', () => renderFriends());
-    peer.on('connection', conn => {
-        conn.on('data', data => {
-            if (!chats[conn.peer]) chats[conn.peer] = { name: data.sender || conn.peer, logs: [] };
-            chats[conn.peer].logs.push({ side: 'them', text: data.text });
-            saveAndRefresh();
+    function previewPfp(input) {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 150; canvas.height = 150;
+                ctx.drawImage(img, 0, 0, 150, 150);
+                myPfp = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('preview-img').src = myPfp;
+                if(myID) { localStorage.setItem('wpfp', myPfp); document.getElementById('my-pfp-show').src = myPfp; }
+            };
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+
+    function changePfpManual() { if(confirm("Ganti foto profil?")) document.getElementById('file-pfp').click(); }
+
+    function register() {
+        const id = document.getElementById('reg-id').value.trim().toLowerCase();
+        const name = document.getElementById('reg-name').value.trim();
+        if(id && name) {
+            localStorage.setItem('wid', id); localStorage.setItem('wname', name);
+            localStorage.setItem('wpfp', myPfp);
+            location.reload();
+        }
+    }
+
+    function initPeer() {
+        document.getElementById('my-name-show').innerText = myName;
+        document.getElementById('my-id-show').innerText = "@" + myID;
+        document.getElementById('my-pfp-show').src = myPfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+
+        peer = new Peer(myID);
+        peer.on('open', renderFriends);
+        peer.on('connection', c => {
+            c.on('data', data => handleIncoming(c.peer, data));
         });
-    });
+    }
 
     function addFriend() {
-        const id = prompt("Masukkan ID Teman:").toLowerCase();
-        if (id && id !== myID) {
-            if (!chats[id]) chats[id] = { name: id, logs: [] };
-            saveAndRefresh();
+        const id = prompt("ID teman:").toLowerCase().trim();
+        if(id && id !== myID) {
+            if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
+            saveFriends();
             openChat(id);
         }
     }
 
     function openChat(id) {
         activeChat = id;
-        document.getElementById('chat-title').innerText = chats[id].name;
-        document.getElementById('chat-form').style.display = 'flex';
-        renderMessages();
+        friends[id].unread = 0;
+        saveFriends();
+        
+        if(window.innerWidth <= 768) document.getElementById('sidebar').classList.add('hide');
+        document.getElementById('btn-back').classList.remove('hidden');
+        document.getElementById('chat-title').innerText = id;
+        document.getElementById('chat-form').classList.remove('hidden');
+        document.getElementById('target-pfp').classList.remove('hidden');
+        document.getElementById('target-pfp').src = friends[id].pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        
+        renderMessages(id);
+        renderFriends();
+        
+        if(conn) conn.close();
+        conn = peer.connect(id);
+        conn.on('data', data => handleIncoming(id, data));
+    }
+
+    function handleIncoming(id, data) {
+        if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
+        if(data.type === 'chat') {
+            friends[id].logs.push({ side: 'them', text: data.text, time: data.time });
+            if(activeChat !== id) friends[id].unread++;
+        }
+        if(data.type === 'pfp_sync') friends[id].pfp = data.pfp;
+        saveFriends();
+        if(activeChat === id) renderMessages(id);
+        renderFriends();
     }
 
     document.getElementById('chat-form').onsubmit = e => {
         e.preventDefault();
         const inp = document.getElementById('msg-input');
-        if (!inp.value) return;
-        chats[activeChat].logs.push({ side: 'me', text: inp.value });
-        const conn = peer.connect(activeChat);
-        conn.on('open', () => {
-            conn.send({ text: inp.value, sender: myName }); 
-            saveAndRefresh();
-        });
+        if(!inp.value || !conn) return;
+        const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        const packet = { type: 'chat', text: inp.value, time: time };
+        conn.send(packet);
+        conn.send({ type: 'pfp_sync', pfp: myPfp });
+        friends[activeChat].logs.push({ side: 'me', text: inp.value, time: time });
+        saveFriends();
+        renderMessages(activeChat);
         inp.value = "";
     };
 
-    function saveAndRefresh() {
-        localStorage.setItem('saved_chats_final', JSON.stringify(chats));
-        renderFriends();
-        if (activeChat) renderMessages();
-    }
-
     function renderFriends() {
-        const list = document.getElementById('friend-list');
-        list.innerHTML = "";
-        Object.keys(chats).forEach(id => {
-            list.innerHTML += `<div class="chat-item" onclick="openChat('${id}')"><b>${chats[id].name}</b></div>`;
-        });
+        const container = document.getElementById('friend-list');
+        container.innerHTML = "";
+        for(let id in friends) {
+            const badge = friends[id].unread > 0 ? `<div class="badge">${friends[id].unread}</div>` : "";
+            const div = document.createElement('div');
+            div.className = 'chat-item';
+            div.innerHTML = `
+                <img src="${friends[id].pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="pfp">
+                <div style="flex:1"><b>${id}</b></div>
+                ${badge}
+            `;
+            div.onclick = () => openChat(id);
+            
+            // FITUR HAPUS: Klik Kanan / Tahan Lama
+            div.oncontextmenu = (e) => {
+                e.preventDefault();
+                selectedFriendForMenu = id;
+                const menu = document.getElementById('context-menu');
+                menu.style.display = 'block';
+                menu.style.left = e.pageX + 'px';
+                menu.style.top = e.pageY + 'px';
+            };
+            container.appendChild(div);
+        }
     }
 
-    function renderMessages() {
+    function deleteChatAction() {
+        if(confirm(`Hapus seluruh obrolan dengan ${selectedFriendForMenu}?`)) {
+            delete friends[selectedFriendForMenu];
+            saveFriends();
+            renderFriends();
+            if(activeChat === selectedFriendForMenu) {
+                activeChat = null;
+                document.getElementById('messages').innerHTML = "";
+                document.getElementById('chat-title').innerText = "Pilih Teman";
+                document.getElementById('chat-form').classList.add('hidden');
+                document.getElementById('target-pfp').classList.add('hidden');
+            }
+        }
+    }
+
+    function renderMessages(id) {
         const container = document.getElementById('messages');
         container.innerHTML = "";
-        chats[activeChat].logs.forEach(m => {
-            container.innerHTML += `<div class="msg ${m.side}">${m.text}</div>`;
+        friends[id].logs.forEach(m => {
+            container.innerHTML += `<div class="msg ${m.side}">${m.text}<div style="font-size:10px;text-align:right;opacity:0.5">${m.time}</div></div>`;
         });
         container.scrollTop = container.scrollHeight;
     }
+
+    window.onclick = () => document.getElementById('context-menu').style.display='none';
+    function backToList() { document.getElementById('sidebar').classList.remove('hide'); activeChat = null; }
+    function saveFriends() { localStorage.setItem('wfriends', JSON.stringify(friends)); }
 </script>
 </body>
 </html>
