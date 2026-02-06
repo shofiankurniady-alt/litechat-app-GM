@@ -3,88 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LiteChat Ultimate - P2P</title>
+    <title>LiteChat Pro</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --dark: #111b21; --side: #111b21; --head: #202c33; --green: #00a884; --msg-me: #005c4b; --msg-them: #202c33; --text: #e9edef; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
         body { margin: 0; background: #0c1317; color: var(--text); height: 100dvh; display: flex; overflow: hidden; }
 
-        /* Setup / Modal */
-        .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
-        .box { background: var(--head); padding: 25px; border-radius: 15px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .box img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--green); cursor: pointer; }
+        /* MODAL SETUP */
+        .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; }
+        .box { background: var(--head); padding: 30px; border-radius: 15px; width: 90%; max-width: 350px; text-align: center; }
+        .box img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid var(--green); cursor: pointer; margin-bottom: 15px; }
 
-        /* Sidebar & Main */
-        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; z-index: 10; }
-        .main { flex: 1; display: flex; flex-direction: column; background: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
+        /* LAYOUT */
+        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; }
+        .main { flex: 1; display: flex; flex-direction: column; background-color: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
 
-        /* Chat List Item */
-        .chat-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; }
-        .chat-item:hover { background: #202c33; }
-        .pfp-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #6a7175; }
-        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 11px; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        /* CHAT LIST */
+        .chat-item { padding: 15px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; }
+        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 11px; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: auto; }
+        .pfp-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
 
-        /* Messages */
-        #messages { flex: 1; overflow-y: auto; padding: 20px 5%; display: flex; flex-direction: column; gap: 6px; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 14.5px; position: relative; color: white; line-height: 1.4; }
+        /* MESSAGES */
+        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; font-size: 15px; position: relative; }
         .msg.me { align-self: flex-end; background: var(--msg-me); border-top-right-radius: 0; }
         .msg.them { align-self: flex-start; background: var(--msg-them); border-top-left-radius: 0; }
-        .msg .time { font-size: 10px; text-align: right; opacity: 0.6; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
-        .ticks { font-size: 14px; line-height: 1; }
-        .read { color: #53bdeb; }
+        .ticks { font-size: 14px; margin-left: 5px; color: #8696a0; }
+        .ticks.read { color: #53bdeb; }
 
-        /* Responsive Mobile */
+        /* INPUT AREA */
+        .input-bar { background: var(--head); padding: 10px; display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px; border-radius: 20px; color: white; outline: none; }
+        button#send-btn { background: var(--green); border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer; }
+
         @media (max-width: 768px) {
-            .sidebar { width: 100%; position: absolute; height: 100%; }
+            .sidebar { width: 100%; position: absolute; height: 100%; z-index: 10; }
             .sidebar.hide { transform: translateX(-100%); }
-            .mobile-only { display: block !important; }
         }
-        .mobile-only { display: none; }
-
-        /* Form & Input */
         .hidden { display: none !important; }
-        .input-bar { background: var(--head); padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
-        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px 18px; border-radius: 25px; color: white; outline: none; }
-        button { background: var(--green); border: none; padding: 10px 20px; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        button:active { opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div id="setup-modal" class="modal">
         <div class="box">
-            <h2>Buat Profil</h2>
+            <h2>Profil Kamu</h2>
             <img id="preview-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" onclick="document.getElementById('file-pfp').click()">
-            <p style="font-size: 12px; color: #8696a0;">Klik gambar untuk ganti foto</p>
-            <input type="file" id="file-pfp" class="hidden" accept="image/*" onchange="previewPfp(this)">
-            <input type="text" id="reg-id" placeholder="ID Unik (misal: budi77)" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:none; background:#2a3942; color:white;">
-            <input type="text" id="reg-name" placeholder="Nama Tampilan" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:none; background:#2a3942; color:white;">
-            <button onclick="register()" style="width:100%">Mulai Chatting</button>
+            <input type="file" id="file-pfp" class="hidden" accept="image/*" onchange="loadPhoto(this)">
+            <input type="text" id="reg-id" placeholder="ID Unik (misal: budi77)" style="width:100%; padding:10px; margin-bottom:10px; border-radius:5px; border:none;">
+            <button onclick="saveProfile()" style="width:100%; background: var(--green); padding:10px; border:none; border-radius:5px; font-weight:bold; cursor:pointer;">MASUK</button>
         </div>
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="input-bar" style="height: 70px; border-bottom: 1px solid #222d34;">
-            <img id="my-pfp-display" src="" style="width:45px;height:45px;border-radius:50%;object-fit:cover;">
-            <div style="flex:1; overflow:hidden;">
-                <b id="my-name-display" style="white-space:nowrap;"></b><br>
-                <small id="my-id-display" style="color:var(--green)"></small>
-            </div>
-            <button onclick="addFriend()" style="padding: 10px 15px;">+</button>
+        <div class="input-bar" style="height:70px">
+            <img id="my-pfp-show" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;">
+            <b id="my-id-show"></b>
+            <button onclick="addFriend()" style="margin-left:auto">+</button>
         </div>
-        <div id="friend-list" style="flex:1; overflow-y:auto;"></div>
+        <div id="friend-list"></div>
     </div>
 
     <div class="main">
-        <div class="input-bar" id="chat-header">
-            <button onclick="backToList()" class="mobile-only">←</button>
-            <img id="target-pfp" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" class="hidden">
-            <b id="chat-title">Pilih Teman untuk Chat</b>
+        <div class="input-bar">
+            <button onclick="closeChat()" id="back-btn" class="hidden">←</button>
+            <b id="chat-title">Pilih Teman</b>
         </div>
-        
         <div id="messages"></div>
-
         <form class="input-bar hidden" id="chat-form">
             <input type="text" id="msg-input" placeholder="Ketik pesan..." autocomplete="off">
             <button type="submit" id="send-btn">KIRIM</button>
@@ -92,59 +78,49 @@
     </div>
 
 <script>
-    let peer, conn, myID = localStorage.getItem('wid'), myName = localStorage.getItem('wname'), myPfp = localStorage.getItem('wpfp');
-    let friends = JSON.parse(localStorage.getItem('wfriends') || '{}'); 
+    let peer, conn, myID = localStorage.getItem('wid'), myPfp = localStorage.getItem('wpfp') || '';
+    let friends = JSON.parse(localStorage.getItem('wfriends') || '{}');
     let activeChat = null;
 
     if(myID) { 
         document.getElementById('setup-modal').classList.add('hidden'); 
-        initPeer(); 
+        startApp(); 
     }
 
-    function previewPfp(input) {
+    function loadPhoto(input) {
         const reader = new FileReader();
-        reader.onload = e => { 
+        reader.onload = e => {
             document.getElementById('preview-img').src = e.target.result;
             myPfp = e.target.result;
-        };
+        }
         reader.readAsDataURL(input.files[0]);
     }
 
-    function register() {
+    function saveProfile() {
         const id = document.getElementById('reg-id').value.trim().toLowerCase();
-        const name = document.getElementById('reg-name').value.trim();
-        if(!id || !name) return alert("ID dan Nama wajib diisi!");
+        if(!id) return alert("ID wajib diisi!");
         localStorage.setItem('wid', id);
-        localStorage.setItem('wname', name);
-        localStorage.setItem('wpfp', myPfp || '');
+        localStorage.setItem('wpfp', myPfp);
         location.reload();
     }
 
-    function initPeer() {
-        document.getElementById('my-name-display').innerText = myName;
-        document.getElementById('my-id-display').innerText = "@" + myID;
-        document.getElementById('my-pfp-display').src = myPfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-
+    function startApp() {
+        document.getElementById('my-id-show').innerText = "@" + myID;
+        document.getElementById('my-pfp-show').src = myPfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        
         peer = new Peer(myID);
         peer.on('open', () => renderFriends());
-
+        
         peer.on('connection', c => {
-            conn = c;
-            c.on('data', data => handleIncomingData(c.peer, data));
-            c.on('open', () => {
-                if(activeChat === c.peer) c.send({ type: 'read-receipt' });
-            });
-        });
-
-        peer.on('error', err => {
-            if(err.type === 'peer-unavailable') console.log("Teman offline");
+            c.on('data', data => handleIncoming(c.peer, data));
+            if(activeChat === c.peer) conn = c;
         });
     }
 
     function addFriend() {
         const id = prompt("Masukkan ID teman:").toLowerCase().trim();
         if(id && id !== myID) {
-            if(!friends[id]) friends[id] = { name: id, pfp: '', unread: 0, logs: [] };
+            if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
             saveFriends();
             renderFriends();
             openChat(id);
@@ -154,77 +130,75 @@
     function openChat(id) {
         activeChat = id;
         friends[id].unread = 0;
-        
-        // Tandai semua pesan masuk sebagai terbaca secara lokal
-        friends[id].logs.forEach(m => { if(m.side === 'them') m.read = true; });
         saveFriends();
         
-        document.getElementById('sidebar').classList.add('hide');
+        document.getElementById('sidebar').classList.add('mobile-hide');
         document.getElementById('chat-title').innerText = id;
         document.getElementById('chat-form').classList.remove('hidden');
-        document.getElementById('target-pfp').classList.remove('hidden');
-        document.getElementById('target-pfp').src = friends[id].pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        document.getElementById('back-btn').classList.remove('hidden');
         
         renderMessages(id);
         renderFriends();
 
+        // Pastikan koneksi segar
         conn = peer.connect(id);
         conn.on('open', () => {
             conn.send({ type: 'profile', pfp: myPfp });
-            conn.send({ type: 'read-receipt' }); // Beritahu teman bahwa kita membuka chat
+            conn.send({ type: 'read' });
         });
-        conn.on('data', data => handleIncomingData(id, data));
+        conn.on('data', data => handleIncoming(id, data));
     }
 
-    function handleIncomingData(id, data) {
-        if(!friends[id]) friends[id] = { name: id, pfp: '', unread: 0, logs: [] };
-        
+    function handleIncoming(id, data) {
+        if(!friends[id]) friends[id] = { pfp: '', unread: 0, logs: [] };
+
         if(data.type === 'chat') {
             friends[id].logs.push({ side: 'them', text: data.text, time: data.time, read: (activeChat === id) });
             if(activeChat !== id) {
                 friends[id].unread++;
             } else {
-                if(conn && conn.open) conn.send({ type: 'read-receipt' });
+                if(conn && conn.open) conn.send({ type: 'read' });
             }
         }
-        
-        if(data.type === 'read-receipt') {
+        if(data.type === 'read') {
             friends[id].logs.forEach(m => { if(m.side === 'me') m.read = true; });
         }
-        
-        if(data.type === 'profile') friends[id].pfp = data.pfp;
+        if(data.type === 'profile') {
+            friends[id].pfp = data.pfp;
+        }
 
         saveFriends();
         if(activeChat === id) renderMessages(id);
         renderFriends();
     }
 
-    document.getElementById('chat-form').onsubmit = e => {
+    // PERBAIKAN TOMBOL KIRIM & ENTER
+    document.getElementById('chat-form').onsubmit = (e) => {
         e.preventDefault();
         const inp = document.getElementById('msg-input');
-        if(!inp.value || !activeChat) return;
+        const val = inp.value.trim();
+        if(!val || !activeChat) return;
 
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const packet = { type: 'chat', text: inp.value, time: time };
+        const msgObj = { side: 'me', text: val, time: time, read: false };
 
-        // Push ke lokal
-        friends[activeChat].logs.push({ side: 'me', text: inp.value, time: time, read: false });
+        friends[activeChat].logs.push(msgObj);
         saveFriends();
         renderMessages(activeChat);
+        inp.value = "";
 
-        // Kirim
-        const sendAction = (targetConn) => {
-            targetConn.send(packet);
-            inp.value = "";
+        // Fungsi kirim internal
+        const sendMsg = (c) => {
+            c.send({ type: 'chat', text: val, time: time });
         };
 
         if(conn && conn.open && conn.peer === activeChat) {
-            sendAction(conn);
+            sendMsg(conn);
         } else {
             const newConn = peer.connect(activeChat);
             newConn.on('open', () => {
                 conn = newConn;
-                sendAction(newConn);
+                sendMsg(newConn);
             });
         }
     };
@@ -233,18 +207,12 @@
         const container = document.getElementById('friend-list');
         container.innerHTML = "";
         for(let id in friends) {
-            const item = friends[id];
-            const lastMsg = item.logs.length > 0 ? item.logs[item.logs.length-1].text : 'Klik untuk chat';
-            const badge = item.unread > 0 ? `<div class="badge">${item.unread}</div>` : "";
-            
+            const f = friends[id];
+            const badge = f.unread > 0 ? `<div class="badge">${f.unread}</div>` : "";
             container.innerHTML += `
                 <div class="chat-item" onclick="openChat('${id}')">
-                    <img src="${item.pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="pfp-small">
-                    <div style="flex:1; overflow:hidden;">
-                        <b style="color:white">@${id}</b><br>
-                        <small style="color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${lastMsg}</small>
-                    </div>
-                    ${badge}
+                    <img src="${f.pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="pfp-small">
+                    <b>@${id}</b> ${badge}
                 </div>`;
         }
     }
@@ -252,26 +220,19 @@
     function renderMessages(id) {
         const container = document.getElementById('messages');
         container.innerHTML = "";
-        const logs = friends[id].logs || [];
-        logs.forEach(m => {
-            const ticks = m.side === 'me' ? `<span class="ticks ${m.read ? 'read' : ''}">✔✔</span>` : '';
+        friends[id].logs.forEach(m => {
+            const tickStatus = m.side === 'me' ? `<span class="ticks ${m.read ? 'read' : ''}">✔✔</span>` : '';
             container.innerHTML += `
                 <div class="msg ${m.side}">
                     ${m.text}
-                    <div class="time">${m.time} ${ticks}</div>
+                    <div style="font-size:10px; opacity:0.6; text-align:right">${m.time} ${tickStatus}</div>
                 </div>`;
         });
         container.scrollTop = container.scrollHeight;
     }
 
-    function backToList() { 
-        document.getElementById('sidebar').classList.remove('hide'); 
-        activeChat = null; 
-    }
-
-    function saveFriends() { 
-        localStorage.setItem('wfriends', JSON.stringify(friends)); 
-    }
+    function closeChat() { document.getElementById('sidebar').classList.remove('mobile-hide'); activeChat = null; }
+    function saveFriends() { localStorage.setItem('wfriends', JSON.stringify(friends)); }
 </script>
 </body>
 </html>
