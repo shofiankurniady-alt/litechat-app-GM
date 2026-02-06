@@ -3,65 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>LiteChat Pro - GM</title>
+    <title>LiteChat Ultimate - P2P</title>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <style>
         :root { --dark: #111b21; --side: #111b21; --head: #202c33; --green: #00a884; --msg-me: #005c4b; --msg-them: #202c33; --text: #e9edef; }
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: #0c1317; color: var(--text); height: 100dvh; display: flex; overflow: hidden; }
 
-        /* Sidebar & List */
-        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); z-index: 10; transition: 0.3s; }
-        .chat-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; position: relative; }
-        .chat-item:hover { background: #202c33; }
-        
-        /* Notifikasi Badge */
-        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 12px; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-left: auto; }
-        
-        /* Status Centang (Simulasi) */
-        .status-icon { font-size: 14px; margin-left: 5px; color: #8696a0; }
-        .status-read { color: #53bdeb !important; }
+        /* Setup / Modal */
+        .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .box { background: var(--head); padding: 25px; border-radius: 15px; width: 100%; max-width: 350px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .box img { width: 100px; height: 100px; border-radius: 50%; object-fit: cover; margin-bottom: 15px; border: 3px solid var(--green); cursor: pointer; }
 
-        .main { flex: 1; display: flex; flex-direction: column; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-color: #0b141a; }
-        #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 5px; }
-        .msg { padding: 8px 12px; border-radius: 8px; max-width: 80%; position: relative; font-size: 15px; }
+        /* Sidebar & Main */
+        .sidebar { width: 30%; min-width: 300px; border-right: 1px solid #222d34; display: flex; flex-direction: column; background: var(--side); transition: 0.3s; z-index: 10; }
+        .main { flex: 1; display: flex; flex-direction: column; background: #0b141a; background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); position: relative; }
+
+        /* Chat List Item */
+        .chat-item { padding: 12px 16px; display: flex; align-items: center; gap: 15px; cursor: pointer; border-bottom: 1px solid #222d34; }
+        .chat-item:hover { background: #202c33; }
+        .pfp-small { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background: #6a7175; }
+        .badge { background: var(--green); color: #000; font-weight: bold; font-size: 11px; min-width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        /* Messages */
+        #messages { flex: 1; overflow-y: auto; padding: 20px 5%; display: flex; flex-direction: column; gap: 6px; }
+        .msg { padding: 8px 12px; border-radius: 8px; max-width: 85%; font-size: 14.5px; position: relative; color: white; line-height: 1.4; }
         .msg.me { align-self: flex-end; background: var(--msg-me); border-top-right-radius: 0; }
         .msg.them { align-self: flex-start; background: var(--msg-them); border-top-left-radius: 0; }
-        
-        .modal { position: fixed; inset: 0; background: var(--dark); z-index: 1000; display: flex; justify-content: center; align-items: center; }
-        .hidden { display: none !important; }
-        .input-bar { background: var(--head); padding: 10px; display: flex; gap: 10px; }
-        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px; border-radius: 20px; color: white; outline: none; }
-        
+        .msg .time { font-size: 10px; text-align: right; opacity: 0.6; margin-top: 4px; display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
+        .ticks { font-size: 14px; line-height: 1; }
+        .read { color: #53bdeb; }
+
+        /* Responsive Mobile */
         @media (max-width: 768px) {
             .sidebar { width: 100%; position: absolute; height: 100%; }
             .sidebar.hide { transform: translateX(-100%); }
+            .mobile-only { display: block !important; }
         }
+        .mobile-only { display: none; }
+
+        /* Form & Input */
+        .hidden { display: none !important; }
+        .input-bar { background: var(--head); padding: 10px 15px; display: flex; gap: 10px; align-items: center; }
+        input[type="text"] { flex: 1; background: #2a3942; border: none; padding: 12px 18px; border-radius: 25px; color: white; outline: none; }
+        button { background: var(--green); border: none; padding: 10px 20px; border-radius: 25px; color: #000; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { opacity: 0.8; }
     </style>
 </head>
 <body>
 
     <div id="setup-modal" class="modal">
-        <div style="background: var(--head); padding: 30px; border-radius: 10px; text-align: center;">
-            <input type="text" id="reg-id" placeholder="ID Unik Anda" style="margin-bottom: 10px; width: 100%;"><br>
-            <button onclick="register()" style="background: var(--green); padding: 10px 20px; border: none; cursor: pointer;">Masuk</button>
+        <div class="box">
+            <h2>Buat Profil</h2>
+            <img id="preview-img" src="https://cdn-icons-png.flaticon.com/512/149/149071.png" onclick="document.getElementById('file-pfp').click()">
+            <p style="font-size: 12px; color: #8696a0;">Klik gambar untuk ganti foto</p>
+            <input type="file" id="file-pfp" class="hidden" accept="image/*" onchange="previewPfp(this)">
+            <input type="text" id="reg-id" placeholder="ID Unik (misal: budi77)" style="width:100%; padding:12px; margin-bottom:10px; border-radius:8px; border:none; background:#2a3942; color:white;">
+            <input type="text" id="reg-name" placeholder="Nama Tampilan" style="width:100%; padding:12px; margin-bottom:15px; border-radius:8px; border:none; background:#2a3942; color:white;">
+            <button onclick="register()" style="width:100%">Mulai Chatting</button>
         </div>
     </div>
 
     <div class="sidebar" id="sidebar">
-        <div class="input-bar">
-            <b id="my-id-display"></b>
-            <button onclick="addFriend()" style="margin-left: auto;">+ Tambah Teman</button>
+        <div class="input-bar" style="height: 70px; border-bottom: 1px solid #222d34;">
+            <img id="my-pfp-display" src="" style="width:45px;height:45px;border-radius:50%;object-fit:cover;">
+            <div style="flex:1; overflow:hidden;">
+                <b id="my-name-display" style="white-space:nowrap;"></b><br>
+                <small id="my-id-display" style="color:var(--green)"></small>
+            </div>
+            <button onclick="addFriend()" style="padding: 10px 15px;">+</button>
         </div>
-        <div id="friend-list"></div>
+        <div id="friend-list" style="flex:1; overflow-y:auto;"></div>
     </div>
 
     <div class="main">
         <div class="input-bar" id="chat-header">
             <button onclick="backToList()" class="mobile-only">←</button>
-            <b id="chat-title">Pilih Teman</b>
+            <img id="target-pfp" src="" style="width:40px;height:40px;border-radius:50%;object-fit:cover;" class="hidden">
+            <b id="chat-title">Pilih Teman untuk Chat</b>
         </div>
+        
         <div id="messages"></div>
+
         <form class="input-bar hidden" id="chat-form">
             <input type="text" id="msg-input" placeholder="Ketik pesan..." autocomplete="off">
             <button type="submit" id="send-btn">KIRIM</button>
@@ -69,114 +92,139 @@
     </div>
 
 <script>
-    let peer, myID = localStorage.getItem('wid');
-    let friends = JSON.parse(localStorage.getItem('wfriends') || '{}');
+    let peer, conn, myID = localStorage.getItem('wid'), myName = localStorage.getItem('wname'), myPfp = localStorage.getItem('wpfp');
+    let friends = JSON.parse(localStorage.getItem('wfriends') || '{}'); 
     let activeChat = null;
-    let connections = {}; // Menyimpan koneksi aktif agar tidak putus nyambung
 
-    if(myID) { document.getElementById('setup-modal').classList.add('hidden'); initPeer(); }
+    if(myID) { 
+        document.getElementById('setup-modal').classList.add('hidden'); 
+        initPeer(); 
+    }
+
+    function previewPfp(input) {
+        const reader = new FileReader();
+        reader.onload = e => { 
+            document.getElementById('preview-img').src = e.target.result;
+            myPfp = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
 
     function register() {
         const id = document.getElementById('reg-id').value.trim().toLowerCase();
-        if(id) { localStorage.setItem('wid', id); location.reload(); }
+        const name = document.getElementById('reg-name').value.trim();
+        if(!id || !name) return alert("ID dan Nama wajib diisi!");
+        localStorage.setItem('wid', id);
+        localStorage.setItem('wname', name);
+        localStorage.setItem('wpfp', myPfp || '');
+        location.reload();
     }
 
     function initPeer() {
-        document.getElementById('my-id-display').innerText = "ID: " + myID;
-        peer = new Peer(myID);
+        document.getElementById('my-name-display').innerText = myName;
+        document.getElementById('my-id-display').innerText = "@" + myID;
+        document.getElementById('my-pfp-display').src = myPfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
 
+        peer = new Peer(myID);
         peer.on('open', () => renderFriends());
 
-        // Menangani pesan masuk (Bahkan saat tidak sedang chat)
-        peer.on('connection', conn => {
-            connections[conn.peer] = conn;
-            conn.on('data', data => handleIncoming(conn.peer, data));
+        peer.on('connection', c => {
+            conn = c;
+            c.on('data', data => handleIncomingData(c.peer, data));
+            c.on('open', () => {
+                if(activeChat === c.peer) c.send({ type: 'read-receipt' });
+            });
+        });
+
+        peer.on('error', err => {
+            if(err.type === 'peer-unavailable') console.log("Teman offline");
         });
     }
 
     function addFriend() {
         const id = prompt("Masukkan ID teman:").toLowerCase().trim();
         if(id && id !== myID) {
-            if(!friends[id]) friends[id] = { logs: [], unread: 0 };
+            if(!friends[id]) friends[id] = { name: id, pfp: '', unread: 0, logs: [] };
             saveFriends();
             renderFriends();
+            openChat(id);
         }
     }
 
     function openChat(id) {
         activeChat = id;
-        friends[id].unread = 0; // Hapus notifikasi saat dibuka
+        friends[id].unread = 0;
+        
+        // Tandai semua pesan masuk sebagai terbaca secara lokal
+        friends[id].logs.forEach(m => { if(m.side === 'them') m.read = true; });
         saveFriends();
         
         document.getElementById('sidebar').classList.add('hide');
-        document.getElementById('chat-title').innerText = "Chat: " + id;
+        document.getElementById('chat-title').innerText = id;
         document.getElementById('chat-form').classList.remove('hidden');
+        document.getElementById('target-pfp').classList.remove('hidden');
+        document.getElementById('target-pfp').src = friends[id].pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
         
-        // Pastikan koneksi terjalin
-        if(!connections[id] || !connections[id].open) {
-            const conn = peer.connect(id);
-            conn.on('open', () => {
-                connections[id] = conn;
-                // Kirim sinyal "Read" saat chat dibuka
-                conn.send({ type: 'read-receipt' });
-            });
-            conn.on('data', data => handleIncoming(id, data));
-        } else {
-            connections[id].send({ type: 'read-receipt' });
-        }
-
         renderMessages(id);
         renderFriends();
+
+        conn = peer.connect(id);
+        conn.on('open', () => {
+            conn.send({ type: 'profile', pfp: myPfp });
+            conn.send({ type: 'read-receipt' }); // Beritahu teman bahwa kita membuka chat
+        });
+        conn.on('data', data => handleIncomingData(id, data));
     }
 
-    function handleIncoming(id, data) {
-        if(!friends[id]) friends[id] = { logs: [], unread: 0 };
-
+    function handleIncomingData(id, data) {
+        if(!friends[id]) friends[id] = { name: id, pfp: '', unread: 0, logs: [] };
+        
         if(data.type === 'chat') {
-            friends[id].logs.push({ side: 'them', text: data.text, time: data.time, read: true });
+            friends[id].logs.push({ side: 'them', text: data.text, time: data.time, read: (activeChat === id) });
             if(activeChat !== id) {
                 friends[id].unread++;
             } else {
-                // Jika sedang buka chat, beri tahu pengirim bahwa sudah dibaca
-                if(connections[id]) connections[id].send({ type: 'read-receipt' });
+                if(conn && conn.open) conn.send({ type: 'read-receipt' });
             }
-        } 
+        }
         
         if(data.type === 'read-receipt') {
-            // Ubah centang jadi biru untuk semua pesan 'me'
             friends[id].logs.forEach(m => { if(m.side === 'me') m.read = true; });
         }
+        
+        if(data.type === 'profile') friends[id].pfp = data.pfp;
 
         saveFriends();
         if(activeChat === id) renderMessages(id);
         renderFriends();
     }
 
-    // Fungsi Kirim Pesan (Enter & Klik)
     document.getElementById('chat-form').onsubmit = e => {
         e.preventDefault();
         const inp = document.getElementById('msg-input');
-        const val = inp.value.trim();
-        if(!val || !activeChat) return;
+        if(!inp.value || !activeChat) return;
 
         const time = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-        const msgObj = { side: 'me', text: val, time: time, read: false };
+        const packet = { type: 'chat', text: inp.value, time: time };
 
-        // Simpan ke riwayat sendiri
-        friends[activeChat].logs.push(msgObj);
+        // Push ke lokal
+        friends[activeChat].logs.push({ side: 'me', text: inp.value, time: time, read: false });
         saveFriends();
         renderMessages(activeChat);
-        inp.value = "";
 
-        // Kirim ke teman
-        if(connections[activeChat] && connections[activeChat].open) {
-            connections[activeChat].send({ type: 'chat', text: val, time: time });
+        // Kirim
+        const sendAction = (targetConn) => {
+            targetConn.send(packet);
+            inp.value = "";
+        };
+
+        if(conn && conn.open && conn.peer === activeChat) {
+            sendAction(conn);
         } else {
-            // Re-koneksi otomatis jika putus
-            const conn = peer.connect(activeChat);
-            conn.on('open', () => {
-                connections[activeChat] = conn;
-                conn.send({ type: 'chat', text: val, time: time });
+            const newConn = peer.connect(activeChat);
+            newConn.on('open', () => {
+                conn = newConn;
+                sendAction(newConn);
             });
         }
     };
@@ -185,11 +233,17 @@
         const container = document.getElementById('friend-list');
         container.innerHTML = "";
         for(let id in friends) {
-            const f = friends[id];
-            const badge = f.unread > 0 ? `<div class="badge">${f.unread}</div>` : "";
+            const item = friends[id];
+            const lastMsg = item.logs.length > 0 ? item.logs[item.logs.length-1].text : 'Klik untuk chat';
+            const badge = item.unread > 0 ? `<div class="badge">${item.unread}</div>` : "";
+            
             container.innerHTML += `
                 <div class="chat-item" onclick="openChat('${id}')">
-                    <div><b>${id}</b></div>
+                    <img src="${item.pfp || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}" class="pfp-small">
+                    <div style="flex:1; overflow:hidden;">
+                        <b style="color:white">@${id}</b><br>
+                        <small style="color:#8696a0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block;">${lastMsg}</small>
+                    </div>
                     ${badge}
                 </div>`;
         }
@@ -198,22 +252,26 @@
     function renderMessages(id) {
         const container = document.getElementById('messages');
         container.innerHTML = "";
-        friends[id].logs.forEach(m => {
-            // Centang Biru Logika
-            const tick = m.side === 'me' ? `<span class="status-icon ${m.read ? 'status-read' : ''}">✔✔</span>` : '';
+        const logs = friends[id].logs || [];
+        logs.forEach(m => {
+            const ticks = m.side === 'me' ? `<span class="ticks ${m.read ? 'read' : ''}">✔✔</span>` : '';
             container.innerHTML += `
                 <div class="msg ${m.side}">
                     ${m.text}
-                    <div style="font-size:10px; opacity:0.6; text-align:right">
-                        ${m.time} ${tick}
-                    </div>
+                    <div class="time">${m.time} ${ticks}</div>
                 </div>`;
         });
         container.scrollTop = container.scrollHeight;
     }
 
-    function backToList() { document.getElementById('sidebar').classList.remove('hide'); activeChat = null; }
-    function saveFriends() { localStorage.setItem('wfriends', JSON.stringify(friends)); }
+    function backToList() { 
+        document.getElementById('sidebar').classList.remove('hide'); 
+        activeChat = null; 
+    }
+
+    function saveFriends() { 
+        localStorage.setItem('wfriends', JSON.stringify(friends)); 
+    }
 </script>
 </body>
 </html>
